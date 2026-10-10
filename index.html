@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunar Indicator | Lunar south pole landing windows</title>
+<meta name="description" content="Compare lunar south pole landing sites and dates by live Sun and Earth geometry from NASA JPL Horizons.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+:root{--ink:#f4f6fa;--dim:#b7c0ce;--faint:#7c869a;--line:#2a3040;--card:#10141d;--g:#3ddc84;--y:#ffd23f;--r:#ff5a5f;--b:#7fd9ff;font-size:19px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:#000;color:var(--ink);font:400 1rem/1.62 Inter,system-ui,sans-serif}
+h1,h2,h3,h4{font-family:'Space Grotesk',Inter,system-ui,sans-serif;line-height:1.14;margin:0;font-weight:700}
+h1{font-size:clamp(1.9rem,3.3vw,2.7rem)}h2{font-size:1.7rem}h3{font-size:1.28rem}h4{font-size:1.05rem}
+p{margin:.7rem 0;max-width:66ch;color:var(--dim)}
+a{color:var(--ink)}
+code{font:inherit;background:#0009;padding:.1rem .4rem;border-radius:5px}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
+header{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:.6rem 2rem;align-items:center;padding:.9rem 4vw;background:rgba(4,6,10,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{font:700 1.32rem 'Space Grotesk',sans-serif;text-decoration:none;margin-right:auto;letter-spacing:.2px}
+.nav{text-decoration:none;color:var(--dim);border-bottom:2px solid transparent;padding:.2rem 0;transition:color .2s}
+.nav:hover{color:var(--ink)}
+.nav.on{color:var(--ink);border-color:var(--b)}
+.wrap{max-width:1400px;margin:auto;padding:2.6rem 4vw 4.5rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;font:600 1.02rem Inter,sans-serif;padding:.8rem 1.7rem;border:2px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);text-decoration:none;cursor:pointer;transition:transform .15s ease,background .2s}
+.btn:hover{background:var(--ink);color:#000;transform:translateY(-1px)}
+.btn.solid{background:var(--ink);color:#000}
+.btn.solid:hover{background:#fff}
+.btn.ghost{border-color:var(--line);color:var(--dim)}
+.btn.ghost:hover{border-color:var(--ink);color:var(--ink);background:transparent}
+.btn:disabled{opacity:.5;cursor:wait;transform:none}
+:focus-visible{outline:3px solid var(--b);outline-offset:3px}
+.card{background:linear-gradient(180deg,var(--card),#0a0d13);border:1px solid var(--line);border-radius:16px}
+
+/* landing */
+#landing{position:relative;min-height:100vh;display:grid;place-items:center;text-align:center;padding:6vw 5vw;background:#000 url(bg.jpg) center/cover;overflow:hidden}
+#landing video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#landing .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.72))}
+#landing .in{position:relative;max-width:1080px}
+#landing .eyebrow{display:inline-block;font:600 .82rem 'Space Grotesk',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--b);border:1px solid #2c3b4d;background:#0006;padding:.4rem .9rem;border-radius:999px;margin-bottom:1.3rem}
+#landing h1{font-size:clamp(1.9rem,4.4vw,3.4rem)}
+#landing h1 .line{display:block}
+#landing p{margin:1.5rem auto 2.4rem;max-width:60ch;font-size:1.24rem;color:#e3e8f1}
+.row{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center}
+@media(prefers-reduced-motion:reduce){#landing video{display:none}.page:not([hidden]),.reveal{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}}
+
+/* page transition + reveal */
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.page:not([hidden]){animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+.split{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:2.6rem;margin-top:1.8rem;align-items:start}
+@media(max-width:920px){.split{grid-template-columns:1fr;gap:2rem}}
+.stagewrap{position:relative}
+.stage{position:relative;height:min(66vh,640px);min-height:360px;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:grab;touch-action:none;background:radial-gradient(circle at 50% 40%,#0d1420,#000)}
+.stage:active{cursor:grabbing}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hint{position:absolute;top:.85rem;left:.85rem;font:500 .82rem Inter,sans-serif;color:var(--dim);background:#0009;border:1px solid var(--line);padding:.5rem .8rem;border-radius:999px;pointer-events:none;backdrop-filter:blur(4px)}
+.coord{position:absolute;left:0;right:0;bottom:0;padding:.7rem .9rem;font:500 .88rem Inter,sans-serif;background:linear-gradient(0deg,#000c,transparent);color:var(--dim);display:flex;gap:.5rem;align-items:center}
+.coord b{color:var(--ink);font-weight:600}
+.coord.in{color:var(--g)}.coord.out{color:var(--y)}
+.legend{display:flex;flex-wrap:wrap;gap:1.3rem;margin-top:.9rem;font-size:.94rem}
+.dot{display:inline-block;width:.8rem;height:.8rem;border-radius:50%;margin-right:.45rem;vertical-align:-1px}
+.src{font-size:.82rem;color:var(--faint);margin-top:.5rem}
+
+/* quick picks */
+.qp{margin-top:1.3rem}
+.qp h4{color:var(--dim);font:600 .84rem 'Space Grotesk',sans-serif;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.6rem}
+.qp-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1.1rem}
+.chip{font:500 .86rem Inter,sans-serif;padding:.48rem .95rem;border-radius:999px;border:1px solid var(--line);background:#0008;color:var(--dim);cursor:pointer;transition:border-color .2s,color .2s,transform .15s}
+.chip:hover{border-color:var(--b);color:var(--ink);transform:translateY(-1px)}
+.chip.on{border-color:var(--g);color:var(--ink);background:#3ddc8422}
+
+/* dashboard infographics */
+.stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin:1.6rem 0}
+.stat{padding:1.1rem 1.2rem}
+.stat b{display:block;font:700 1.7rem 'Space Grotesk',sans-serif;color:var(--b)}
+.stat span{font-size:.86rem;color:var(--faint)}
+.charts{display:grid;gap:2.6rem}
+.chart{display:flex;flex-wrap:wrap;align-items:center;gap:1.8rem;margin-top:.9rem}
+.donut{position:relative;width:180px;height:180px;border-radius:50%;flex:none}
+.donut::after{content:'';position:absolute;inset:25%;border-radius:50%;background:#000}
+.chart ul{list-style:none;margin:0;padding:0;font-size:1.1rem}.chart li{margin:.5rem 0}
+.fact{padding:1.3rem 1.4rem;display:flex;gap:1rem;align-items:flex-start}
+.fact .e{font-size:1.6rem;line-height:1}
+.fact p{margin:.2rem 0 0;font-size:.96rem}
+.bars{margin-top:.6rem}
+.barrow{display:grid;grid-template-columns:9rem 1fr 3.6rem;align-items:center;gap:.8rem;margin:.7rem 0;font-size:.92rem;color:var(--dim)}
+.bartrack{height:10px;border-radius:999px;background:#1a2030;overflow:hidden}
+.barfill{height:100%;border-radius:999px}
+
+label{display:block;margin:1rem 0 .3rem;font-weight:600;font-size:.95rem}
+input{width:100%;font:inherit;padding:.7rem .9rem;color:var(--ink);background:#0a0e15;border:1px solid #3a4258;border-radius:9px;color-scheme:dark}
+input:focus{border-color:var(--b)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+#f .btn{margin-top:1.1rem;width:100%;justify-content:center}
+#status{min-height:1.6rem;color:var(--y);font-size:.92rem}
+#result{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+.verdict{font:700 1.9rem/1.2 'Space Grotesk',sans-serif;display:flex;align-items:center;gap:.6rem}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin:1.1rem 0 1.6rem}
+.metrics div{padding:.85rem .7rem}
+.metrics b{display:block;font:700 1.6rem 'Space Grotesk',sans-serif;color:var(--ink)}
+.metrics span{font-size:.78rem;color:var(--faint)}
+.kp{display:grid;grid-template-columns:2.2rem 1fr;gap:.9rem;padding:1rem 0;border-bottom:1px solid var(--line)}
+.kp:last-child{border-bottom:0}
+.mark{font-size:1.6rem;line-height:1.25}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.94rem}
+th,td{text-align:left;padding:.75rem .55rem;border-bottom:1px solid var(--line)}th{color:var(--dim);font-weight:500}
+#tl{width:100%;height:320px;display:block;margin-top:.8rem}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin:2.4rem 0;gap:1.6rem}
+.trio>div{padding:1.5rem;border:1px solid var(--line);border-radius:14px}
+.trio h2{display:flex;align-items:center;gap:.5rem;font-size:1.3rem}
+.rows{margin:2rem 0}.rows>div{padding:1.5rem 0;border-bottom:1px solid var(--line)}.rows h2{display:flex;align-items:center;gap:.55rem}.rows p{font-size:1.06rem;max-width:70ch}
+.insight-block{margin:2rem 0}
+.insight-block h2{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.pill-row{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
+.pill{font:500 .84rem Inter,sans-serif;padding:.4rem .8rem;border:1px solid var(--line);border-radius:999px;color:var(--dim)}
+footer{padding:2.4rem 4vw;border-top:1px solid var(--line);color:var(--faint);font-size:.86rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:.6rem}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<header hidden>
+  <a class="brand" href="#/">🌗 Lunar Indicator</a>
+  <a class="nav" href="#/dashboard">Dashboard</a>
+  <a class="nav" href="#/explore">Predict &amp; Explore</a>
+  <a class="nav" href="#/insights">Mission Insights</a>
+</header>
+
+<section id="landing" class="page" hidden>
+  <video autoplay muted loop playsinline poster="bg.jpg"><source src="bg.mp4" type="video/mp4"></video>
+  <div class="veil"></div>
+  <div class="in">
+    <span class="eyebrow">Lunar Indicator</span>
+    <h1><span class="line">Know Before You Touch Down</span><span class="line">Pinpointing Safe Landing Windows at the Lunar South Pole.</span></h1>
+    <p>Mapping the unlit depths and illuminated peaks of the lunar south pole—empowering students, researchers, and engineers to explore humanity's next giant leap.</p>
+    <div class="row">
+      <a class="btn solid" href="#/dashboard">🚀 Explorer</a>
+      <a class="btn" href="#/users">👥 Users</a>
+      <a class="btn" href="#/how">💡 How it helps</a>
+      <a class="btn" href="#/insights">🛰️ Mission Insights</a>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard" class="page wrap" hidden>
+  <h1>Where landing is safe on the Moon</h1>
+  <p class="reveal">Drag to turn the Moon, scroll to zoom, click any point to check it in Predict &amp; Explore. The glowing cap marks the south pole region, 80°S to 90°S.</p>
+  <div class="split">
+    <div class="reveal">
+      <div class="stagewrap">
+        <div class="stage" id="stageDash"></div>
+        <div class="hint">Drag to rotate · Scroll to zoom · Click to select</div>
+        <div class="coord" id="coordDash">Click the Moon to inspect a point</div>
+      </div>
+      <div class="legend"></div>
+      <p class="src">Colouring is a procedural terrain model illustrating slope hazard — not the real LOLA elevation map. Live checks use real NASA Sun/Earth ephemerides.</p>
+    </div>
+    <div class="charts">
+      <div class="reveal"><h2>🌍 Entire Moon</h2><div class="chart"><div class="donut" id="dAll"></div><ul id="lAll"></ul></div></div>
+      <div class="reveal"><h2>🧊 South pole, 80°S–90°S</h2><div class="chart"><div class="donut" id="dPole"></div><ul id="lPole"></ul></div></div>
+    </div>
+  </div>
+
+  <div class="stat-strip" id="statStrip"></div>
+
+  <div class="trio">
+    <div class="card reveal">
+      <h2>☀️ Peaks of near-eternal light</h2>
+      <p>On the ridge connecting Shackleton and de Gerlache craters, some high points stay sunlit for up to 90% of the time — though none are lit every hour of every day.</p>
+      <p class="src">Source: NASA/GSFC, Arizona State University (LROC)</p>
+    </div>
+    <div class="card reveal">
+      <h2>🤝 CLPS at a glance</h2>
+      <p>NASA's Commercial Lunar Payload Services program has contracted up to $2.6 billion through 2028 across 14 eligible American vendors to fly science and technology to the Moon.</p>
+      <p class="src">Source: NASA (nasa.gov/clps)</p>
+    </div>
+    <div class="card reveal">
+      <h2>🕳️ Permanent shadow</h2>
+      <p>Crater floors like Shackleton's never see direct sunlight at all — prime targets for water-ice prospecting, but the opposite of a good power-generation site.</p>
+      <p class="src">Source: NASA/GSFC, Arizona State University (LROC)</p>
+    </div>
+  </div>
+
+  <div class="card reveal" style="padding:1.6rem 1.8rem">
+    <h2>📊 Illumination by latitude band</h2>
+    <p>A rough, long-run average share of time each band spends in sunlight — the poles behave nothing like the equator.</p>
+    <div class="bars" id="latBars"></div>
+    <p class="src">Polar ridge figure is NASA/LROC-sourced (above); other bands are general orbital-geometry estimates, not per-site NASA data.</p>
+  </div>
+</section>
+
+<section id="explore" class="page wrap" hidden>
+  <h1>Explore the possible landing points of the lunar south pole</h1>
+  <p class="reveal">Interactive 3D visualization of the lunar south pole, checked live against NASA JPL Horizons.</p>
+  <div class="split">
+    <div class="reveal">
+      <div class="stagewrap">
+        <div class="stage" id="stageExp"></div>
+        <div class="hint">Drag to rotate · Scroll to zoom · Click to select</div>
+        <div class="coord" id="coordExp">Click the Moon, or pick a site below</div>
+      </div>
+      <div class="qp">
+        <h4>South Pole</h4>
+        <div class="qp-row" id="qpSouth"></div>
+        <h4>Outside South Pole</h4>
+        <div class="qp-row" id="qpOut"></div>
+      </div>
+    </div>
+    <div>
+      <form id="f" novalidate class="reveal">
+        <div class="two">
+          <div><label for="lat">Latitude (°, − = South)</label><input id="lat" type="number" step="any" min="-90" max="90" value="-89.5"></div>
+          <div><label for="lon">Longitude (°E)</label><input id="lon" type="number" step="any" min="-180" max="180" value="30"></div>
+        </div>
+        <div class="two">
+          <div><label for="t0">Mission start date</label><input id="t0" type="date"></div>
+          <div><label for="t1">Mission stop date</label><input id="t1" type="date"></div>
+        </div>
+        <p class="hint" style="position:static;display:inline-block;margin-top:.9rem">Up to 90 days. Positions are fetched live — this can take a few seconds.</p>
+        <button class="btn solid" id="go" type="submit">☀️ Check this site</button>
+        <p id="status" role="status"></p>
+      </form>
+      <div id="result" class="reveal" hidden></div>
+    </div>
+  </div>
+</section>
+
+<section id="why" class="page wrap" hidden><div id="whybox"></div></section>
+
+<section id="users" class="page wrap" hidden>
+  <h1>Who it is for</h1>
+  <div class="trio">
+    <div class="reveal"><h2>🧑‍🚀 Mission planners</h2><p>Instant operational window discovery without executing complex ephemeris queries.</p></div>
+    <div class="reveal"><h2>🎓 Educators</h2><p>Interactive visual sandbox demonstrating low-angle polar illumination and line-of-sight communications.</p></div>
+    <div class="reveal"><h2>🌍 General public</h2><p>Verified, accessible access to real Artemis-era lunar landing data.</p></div>
+  </div>
+  <a class="btn solid" href="#/explore">Try the tool</a>
+</section>
+
+<section id="how" class="page wrap" hidden>
+  <h1>How it helps</h1>
+  <div class="rows">
+    <div class="reveal"><h2>⚠️ Landing hazards</h2><p>Touchdown risks on steep crater slopes hidden by deep shadows are mitigated because the tool maps local terrain shadows to reveal clear, well-lit landing zones.</p></div>
+    <div class="reveal"><h2>🛡️ Crew survival</h2><p>Environmental control systems freezing from sudden power loss are avoided because the tool pinpoints guaranteed solar illumination windows to keep heaters and life support online.</p></div>
+    <div class="reveal"><h2>💰 Financial risk</h2><p>Multi-billion dollar hardware losses or premature mission aborts are prevented because the tool maximizes operational window overlaps between power and communications prior to launch commitment.</p></div>
+  </div>
+  <a class="btn solid" href="#/explore">Try the tool</a>
+</section>
+
+<section id="insights" class="page wrap" hidden>
+  <h1>Unlocking the Next Frontier for CLPS Missions</h1>
+  <p class="reveal">How the Commercial Lunar Payload Services initiative is opening the south pole to science, industry, and eventually astronauts.</p>
+
+  <div class="insight-block reveal">
+    <h2>🛰️ What is CLPS</h2>
+    <p>Commercial Lunar Payload Services is a NASA initiative that contracts private American companies to build robotic landers and deliver science instruments and technology payloads to the Moon's surface, rather than NASA building and flying its own landers. It is a key part of the foundation for Artemis, since many CLPS flights are scouting the same south-polar terrain that will later host crewed landings.</p>
+    <p>Each task order covers the full trip end to end — payload integration, launch from Earth, and landing on the Moon — and the companies are selected competitively for individual missions rather than a single contractor flying every flight.</p>
+  </div>
+
+  <div class="insight-block reveal">
+    <h2>🏢 Who is flying</h2>
+    <p>NASA opened CLPS to nine American companies in 2018 and added five more the following year, bringing the pool to 14 eligible vendors that can bid on delivery task orders as new payloads are ready to fly.</p>
+    <div class="pill-row" id="clpsPills"></div>
+  </div>
+
+  <div class="insight-block reveal">
+    <h2>🎯 Why the south pole</h2>
+    <p>CLPS deliveries are concentrated near the lunar south pole because that is where Artemis intends to land astronauts, and because the region's permanently shadowed craters are the best candidates anywhere on the Moon for water ice. Every lander that survives a south-polar touchdown and returns illumination or terrain data makes the next landing, crewed or robotic, a little less uncertain — which is exactly the kind of comparison this site is built to visualise.</p>
+  </div>
+
+  <div class="insight-block reveal">
+    <h2>💵 Scale of the program</h2>
+    <div class="stat-strip">
+      <div class="stat card"><b>$2.6B</b><span>cumulative contract ceiling, through 2028</span></div>
+      <div class="stat card"><b>14</b><span>eligible American vendor companies</span></div>
+      <div class="stat card"><b>2023+</b><span>commercial deliveries began under Artemis</span></div>
+    </div>
+    <p class="src">Figures: NASA (nasa.gov/clps). This page summarises public NASA information; swap in your own source document any time by pasting its text to me.</p>
+  </div>
+
+  <a class="btn solid" href="#/explore">See it on the map</a>
+</section>
+
+<footer>
+  <span>Lunar Indicator — built for the lunar south pole landing challenge</span>
+  <span>Sun/Earth geometry: live NASA JPL Horizons · Terrain: illustrative model</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),D=Math.PI/180;
+const HORIZONS='https://ssd.jpl.nasa.gov/api/horizons.api';
+const MIN_SUN_EL=2.0, MIN_EARTH_EL=0.5, MAX_SLOPE=15.0, P_MAX=500.0;
+let page='', last=null;
+try{last=JSON.parse(sessionStorage.getItem('last'))}catch(_){}
+const iso=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10);
+$('#t0').value=iso(2);$('#t1').value=iso(9);
+
+/* ---------- starfield ---------- */
+function stars(){const c=$('#stars'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+ for(let i=0,n=Math.min(320,c.width*c.height/5200);i<n;i++){x.fillStyle='rgba(255,255,255,'+(.25+Math.random()*.65)+')';x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,Math.random()<.08?1.5:.9,0,7);x.fill()}}
+addEventListener('resize',stars);stars();
+
+/* ---------- shared terrain model (illustrative — not real LOLA data) ---------- */
+const V=(a,o)=>[Math.cos(a)*Math.cos(o),Math.sin(a),-Math.cos(a)*Math.sin(o)];
+const rnd=(s=>()=>(s=s*16807%2147483647)/2147483647)(11);
+const CR=[],addCr=(a,o,r,d,pit)=>CR.push({c:V(a,o),r,d,pit,cm:Math.cos(r*1.3)});
+for(let i=0;i<130;i++)addCr(Math.asin(rnd()*2-1),rnd()*6.2832,.025+rnd()**2*.16,.5+rnd()*.7,0);
+for(let i=0;i<6;i++)addCr(-(82+rnd()*7)*D,rnd()*6.2832,.026+rnd()*.02,1.3,1);
+addCr(-89.6*D,0,.028,1.3,1);
+const PITS=CR.filter(k=>k.pit);
+function terrH(v){let h=0;for(const k of CR){const t=v[0]*k.c[0]+v[1]*k.c[1]+v[2]*k.c[2];if(t<k.cm)continue;const u=Math.acos(Math.min(1,t))/k.r;h+=u<1?-k.d*.014*(1-u*u):k.d*.005*(1-(u-1)/.3)}
+ return h+(.05+.05*Math.max(0,-v[1]))*(.5*Math.sin(5*v[0]+2*Math.sin(4*v[1]))*Math.cos(5*v[2]+1)+.25*Math.sin(13*v[0]+7*v[2])*Math.cos(11*v[1]))}
+const unit=w=>{const l=Math.hypot(w[0],w[1],w[2])||1;return[w[0]/l,w[1]/l,w[2]/l]};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function tangents(v){const t1=unit(cross(v,Math.abs(v[1])>.99?[1,0,0]:[0,1,0]));return[t1,unit(cross(v,t1))]}
+function terrNormalSlope(v){const e=.012,[t1,t2]=tangents(v),h=terrH(v);
+ const p=t=>unit([v[0]+e*t[0],v[1]+e*t[1],v[2]+e*t[2]]);
+ const h1=terrH(p(t1)),h2=terrH(p(t2));
+ const dz1=(h1-h)/e, dz2=(h2-h)/e;
+ const nrm=unit([v[0]-dz1*t1[0]-dz2*t2[0], v[1]-dz1*t1[1]-dz2*t2[1], v[2]-dz1*t1[2]-dz2*t2[2]]);
+ const slopeDeg=Math.atan(Math.hypot(dz1,dz2))/D;
+ return{h,normal:nrm,slopeDeg};
+}
+function isPit(v){return PITS.some(k=>Math.acos(Math.min(1,v[0]*k.c[0]+v[1]*k.c[1]+v[2]*k.c[2]))<k.r*.9)}
+function hazardClass(v){const s=terrNormalSlope(v).slopeDeg;return isPit(v)||s>15?2:s>10?1:0}
+function siteSlopeDeg(lat,lon){return terrNormalSlope(V(lat*D,lon*D)).slopeDeg}
+
+/* ---------- dashboard hazard-coloured geometry + stats ---------- */
+function buildHazardGeometry(){
+ const NL=120,NO=240,pos=[],col=[],idx=[],st={all:[0,0,0],pole:[0,0,0]},C=[[.24,.86,.52],[1,.82,.25],[1,.35,.37]];
+ for(let i=0;i<=NL;i++){const a=-Math.PI/2+i/NL*Math.PI;
+  for(let j=0;j<=NO;j++){const v=V(a,j/NO*2*Math.PI),ts=terrNormalSlope(v),c=isPit(v)||ts.slopeDeg>15?2:ts.slopeDeg>10?1:0,r=1+ts.h*.5;
+   pos.push(v[0]*r,v[1]*r,v[2]*r);col.push(...C[c]);
+   if(i<NL&&j<NO){const w=Math.cos(a+Math.PI/NL/2);st.all[c]+=w;if(a<-80*D)st.pole[c]+=w}}}
+ for(let i=0;i<NL;i++)for(let j=0;j<NO;j++){const a=i*(NO+1)+j,b=a+NO+1;idx.push(a,a+1,b,b,a+1,b+1)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();return{geometry:g,stats:st};
+}
+
+/* ---------- realistic procedural texture + bump for Explore's moon ---------- */
+function buildRealisticMaps(){
+ const W=900,H=450,diff=document.createElement('canvas'),bump=document.createElement('canvas');
+ diff.width=bump.width=W;diff.height=bump.height=H;
+ const dctx=diff.getContext('2d'),bctx=bump.getContext('2d');
+ const dimg=dctx.createImageData(W,H),bimg=bctx.createImageData(W,H);
+ const L=unit([0.45,0.62,0.64]);
+ let hi=1e9,lo=-1e9;
+ const hs=new Float32Array(W*H);
+ for(let j=0;j<H;j++){const lat=Math.PI/2-(j/(H-1))*Math.PI;
+  for(let i=0;i<W;i++){const lon=(i/W)*2*Math.PI-Math.PI,v=V(lat,lon),h=terrH(v);hs[j*W+i]=h;if(h<hi)hi=h;if(h>lo)lo=h}}
+ const rng=Math.max(1e-4,lo-hi);
+ for(let j=0;j<H;j++){const lat=Math.PI/2-(j/(H-1))*Math.PI;
+  for(let i=0;i<W;i++){const lon=(i/W)*2*Math.PI-Math.PI,v=V(lat,lon),ts=terrNormalSlope(v);
+   const albedo=.58+.09*Math.sin(3.1*v[0]+1.7*v[2])*Math.cos(2.3*v[1])+.05*Math.sin(11*v[0]+5*v[2]);
+   const shade=Math.max(.08,ts.normal[0]*L[0]+ts.normal[1]*L[1]+ts.normal[2]*L[2]);
+   const val=Math.min(255,Math.max(0,Math.round(255*Math.max(.05,Math.min(1,albedo))*shade)));
+   const k=(j*W+i)*4;dimg.data[k]=val;dimg.data[k+1]=val;dimg.data[k+2]=val*1.01;dimg.data[k+3]=255;
+   const bv=Math.round(255*(hs[j*W+i]-hi)/rng);bimg.data[k]=bv;bimg.data[k+1]=bv;bimg.data[k+2]=bv;bimg.data[k+3]=255;
+  }}
+ dctx.putImageData(dimg,0,0);bctx.putImageData(bimg,0,0);
+ const dt=new THREE.CanvasTexture(diff),bt=new THREE.CanvasTexture(bump);
+ dt.wrapS=dt.wrapT=bt.wrapS=bt.wrapT=THREE.RepeatWrapping;
+ return{diffuse:dt,bump:bt};
+}
+
+/* ---------- south pole cap + click marker (shared) ---------- */
+function buildPoleCap(){
+ const rows=16,cols=56,pos=[],idx=[],boundary=[];
+ const maxAng=10*D;
+ for(let i=0;i<=rows;i++){const ang=i/rows*maxAng,rr=Math.sin(ang),y=-Math.cos(ang);
+  for(let j=0;j<=cols;j++){const o=j/cols*2*Math.PI,x=rr*Math.cos(o)*1.014,z=-rr*Math.sin(o)*1.014,yy=y*1.014;
+   pos.push(x,yy,z);if(i===rows)boundary.push(new THREE.Vector3(x,yy,z))}}
+ for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){const a=i*(cols+1)+j,b=a+cols+1;idx.push(a,a+1,b,b,a+1,b+1)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);
+ const cap=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x7fd9ff,transparent:true,opacity:.14,side:THREE.DoubleSide,depthWrite:false}));
+ const ring=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(boundary),new THREE.LineBasicMaterial({color:0x9fe6ff,transparent:true,opacity:.75}));
+ const grp=new THREE.Group();grp.add(cap,ring);return grp;
+}
+function buildMarker(){
+ const grp=new THREE.Group();
+ const ring=new THREE.Mesh(new THREE.RingGeometry(.032,.045,32),new THREE.MeshBasicMaterial({color:0x7fe9ff,side:THREE.DoubleSide,transparent:true,opacity:.95}));
+ const dot=new THREE.Mesh(new THREE.CircleGeometry(.016,24),new THREE.MeshBasicMaterial({color:0xeafcff,side:THREE.DoubleSide}));
+ grp.add(ring,dot);grp.visible=false;return grp;
+}
+function placeMarker(marker,v){
+ const pos=new THREE.Vector3(v[0],v[1],v[2]).multiplyScalar(1.02);
+ marker.position.copy(pos);marker.lookAt(pos.clone().multiplyScalar(2));marker.visible=true;
+}
+
+/* ---------- interactive moon scene factory ---------- */
+function makeScene(container,{style,onPick}){
+ const inst={ren:null,scene:null,cam:null,moon:null,marker:null,active:false};
+ let cw=0,ch=0,auto=matchMedia('(prefers-reduced-motion:reduce)').matches?0:1;
+ try{
+  if(!window.THREE)throw new Error('no three');
+  const {geometry,stats}=buildHazardGeometry();
+  const ren=new THREE.WebGLRenderer({antialias:true,alpha:true});ren.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(38,1,.1,30);cam.position.z=3.5;
+  scene.add(new THREE.AmbientLight(0xffffff,style==='realistic'?.32:.62));
+  const dl=new THREE.DirectionalLight(0xffffff,style==='realistic'?1.25:1);dl.position.set(3,2,5);scene.add(dl);
+  let mat;
+  if(style==='realistic'){const maps=buildRealisticMaps();mat=new THREE.MeshStandardMaterial({map:maps.diffuse,bumpMap:maps.bump,bumpScale:.035,roughness:1,metalness:0});}
+  else{mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0});}
+  const moon=new THREE.Mesh(geometry,mat);moon.rotation.x=-1.2;scene.add(moon);
+  moon.add(buildPoleCap());
+  const marker=buildMarker();moon.add(marker);
+  const el=ren.domElement;let down=null;
+  el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,m:0};el.setPointerCapture(e.pointerId);el.style.cursor='grabbing';auto=0});
+  el.addEventListener('pointermove',e=>{if(!down)return;const k=.0062;moon.rotateOnWorldAxis(new THREE.Vector3(0,1,0),e.movementX*k);moon.rotateOnWorldAxis(new THREE.Vector3(1,0,0),e.movementY*k);down.m+=Math.abs(e.movementX)+Math.abs(e.movementY)});
+  el.addEventListener('pointerup',e=>{el.style.cursor='grab';if(down&&down.m<6)pick(e);down=null});
+  el.addEventListener('pointerleave',()=>{down=null});
+  el.addEventListener('wheel',e=>{e.preventDefault();cam.position.z=Math.min(6,Math.max(1.7,cam.position.z+e.deltaY*.0022))},{passive:false});
+  function pick(e){const r=el.getBoundingClientRect(),rc=new THREE.Raycaster();
+   rc.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1),cam);
+   const hit=rc.intersectObject(moon,false)[0];if(!hit)return;
+   const p=moon.worldToLocal(hit.point.clone()).normalize();
+   placeMarker(marker,[p.x,p.y,p.z]);
+   const lat=Math.asin(p.y)/D,lon=Math.atan2(-p.z,p.x)/D;
+   onPick&&onPick(lat,lon,hazardClass([p.x,p.y,p.z]));
+  }
+  (function loop(){requestAnimationFrame(loop);if(!inst.active)return;
+   const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;
+   if(w!==cw||h!==ch){cw=w;ch=h;ren.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+   if(auto)moon.rotateY(.0016);ren.render(scene,cam);
+  })();
+  container.appendChild(el);
+  Object.assign(inst,{ren,scene,cam,moon,marker,stats});
+ }catch(err){container.innerHTML='<p style="padding:1rem;color:var(--dim)">The 3D Moon needs WebGL and an internet connection (to load three.js) to load.</p>';}
+ return inst;
+}
+
+let dashScene=null, expScene=null;
+function setLegend(el){el.innerHTML='<span><i class="dot" style="background:var(--g)"></i>Safe</span><span><i class="dot" style="background:var(--y)"></i>Caution</span><span><i class="dot" style="background:var(--r)"></i>Dangerous</span>';}
+
+/* ---------- dashboard charts + facts ---------- */
+function renderCharts(stats){
+ [['dAll','lAll',stats.all],['dPole','lPole',stats.pole]].forEach(([d,l,s])=>{
+  const t=s[0]+s[1]+s[2],p=s.map(x=>x/t*100),a=p[0],b=a+p[1];
+  $('#'+d).style.background='conic-gradient(var(--g) 0 '+a+'%,var(--y) '+a+'% '+b+'%,var(--r) '+b+'% 100%)';
+  $('#'+l).innerHTML=[['g','Safe'],['y','Caution'],['r','Dangerous']].map((k,i)=>'<li><i class="dot" style="background:var(--'+k[0]+')"></i>'+k[1]+': <b>'+p[i].toFixed(1)+'%</b></li>').join('');
+ });
+ const safePct=(stats.all[0]/(stats.all[0]+stats.all[1]+stats.all[2])*100).toFixed(0);
+ const polePct=(stats.pole[0]/(stats.pole[0]+stats.pole[1]+stats.pole[2])*100).toFixed(0);
+ $('#statStrip').innerHTML=[
+  ['🌕',safePct+'%','of the modelled surface reads "safe"'],
+  ['🧊',polePct+'%','of the south-pole cap reads "safe"'],
+  ['📡','89.67°S','Shackleton crater rim, pole reference'],
+  ['🛰️','14','CLPS vendor companies eligible to fly'],
+ ].map(([e,b,s])=>'<div class="stat card reveal"><b>'+e+' '+b+'</b><span>'+s+'</span></div>').join('');
+ $('#latBars').innerHTML=[['Polar ridges (near-eternal light)',88,'g'],['Mid-latitudes',55,'b'],['Equator (~14-day cycle)',50,'y'],['Deep polar craters (PSRs)',2,'r']]
+  .map(([n,v,c])=>'<div class="barrow"><span>'+n+'</span><div class="bartrack"><div class="barfill" style="width:'+v+'%;background:var(--'+c+')"></div></div><span>~'+v+'%</span></div>').join('');
+}
+
+/* ---------- quick pick sites (verified real coordinates) ---------- */
+const SITES_SOUTH=[
+ {n:'Shackleton Rim',lat:-89.67,lon:129.2,d:'21 km polar crater; rim points lit up to ~90% of the time.'},
+ {n:'Shoemaker',lat:-89.9,lon:0.0,d:'50 km crater between Shackleton and Faustini.'},
+ {n:'de Gerlache',lat:-88.5,lon:-87.1,d:'Permanently shadowed floor; ridge links it to Shackleton.'},
+ {n:'Faustini',lat:-87.3,lon:77.0,d:'39 km crater with elevated hydrogen readings.'},
+ {n:'Malapert Massif',lat:-86.0,lon:0.0,d:'~5,000 m peak; an Artemis III candidate region.'},
+ {n:'Amundsen',lat:-84.5,lon:82.8,d:'105 km crater on the southern limb.'},
+ {n:'Cabeus',lat:-84.9,lon:-35.5,d:'LCROSS impact site, 2009.'},
+];
+const SITES_OUT=[
+ {n:'Apollo 11',lat:0.674,lon:23.473,d:'Mare Tranquillitatis — first crewed landing, 1969.'},
+ {n:'Apollo 17',lat:20.19,lon:30.77,d:'Taurus–Littrow — last crewed landing, 1972.'},
+ {n:'Tycho',lat:-43.31,lon:-11.36,d:'Bright young rayed crater.'},
+ {n:'Copernicus',lat:9.62,lon:-20.08,d:'Large terraced crater with a central peak.'},
+];
+function renderQuickPicks(){
+ const row=(arr,id)=>{$(id).innerHTML=arr.map((s,i)=>`<button type="button" class="chip" data-i="${i}" title="${s.d}">${s.n}</button>`).join('');
+  $(id).querySelectorAll('.chip').forEach((btn,i)=>btn.addEventListener('click',()=>{
+   const s=arr[i];$('#lat').value=s.lat;$('#lon').value=s.lon;
+   $(id).parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');
+   if(expScene&&expScene.moon){const v=V(s.lat*D,s.lon*D);placeMarker(expScene.marker,v);updateCoord('coordExp',s.lat,s.lon)}
+  }));};
+ row(SITES_SOUTH,'#qpSouth');row(SITES_OUT,'#qpOut');
+}
+function updateCoord(id,lat,lon){
+ const inPole=lat<=-80;const el=$('#'+id);
+ el.className='coord '+(inPole?'in':'out');
+ el.innerHTML=(inPole?'✅ South Pole region':'⚠️ Outside South Pole region')+' — <b>'+Math.abs(lat).toFixed(2)+'°'+(lat<0?'S':'N')+', '+Math.abs(lon).toFixed(2)+'°'+(lon<0?'W':'E')+'</b>';
+}
+
+/* ---------- NASA JPL Horizons — live, client-side ---------- */
+function eastLon(lon){return ((lon%360)+360)%360}
+function parseHorizons(text){
+ const s=text.indexOf('$$SOE'),e=text.indexOf('$$EOE');
+ if(s<0||e<0){const m=text.match(/\*+\s*([^\n]*Error[^\n]*)/i);throw new Error(m?m[1].trim():'Unexpected response from Horizons');}
+ return text.slice(s+5,e).trim().split('\n').filter(Boolean).map(line=>{
+  const parts=line.split(',').map(p=>p.trim());
+  const date=parts[0];
+  const nums=parts.slice(1).map(parseFloat).filter(n=>!isNaN(n));
+  return{date,az:nums[0],el:nums[1]};
+ });
+}
+async function fetchBody(cmd,lat,lon,start,stop,stepHours){
+ const q=new URLSearchParams({format:'text',COMMAND:`'${cmd}'`,OBJ_DATA:'NO',MAKE_EPHEM:'YES',EPHEM_TYPE:'OBSERVER',
+  CENTER:`'coord@301'`,COORD_TYPE:'GEODETIC',SITE_COORD:`'${eastLon(lon).toFixed(4)},${lat.toFixed(4)},0'`,
+  START_TIME:`'${start}'`,STOP_TIME:`'${stop}'`,STEP_SIZE:`'${stepHours} h'`,QUANTITIES:`'4'`,CSV_FORMAT:'YES'});
+ const res=await fetch(HORIZONS+'?'+q.toString());
+ if(!res.ok)throw new Error('Horizons HTTP '+res.status);
+ return parseHorizons(await res.text());
+}
+function addDays(iso,n){const d=new Date(iso+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+async function assessSite(lat,lon,start,stop){
+ const totalHours=Math.max(1,Math.round((new Date(stop)-new Date(start))/36e5));
+ const stepHours=Math.max(1,Math.ceil(totalHours/1500));
+ const stopIncl=addDays(stop,1);
+ const[sun,earth]=await Promise.all([fetchBody('10',lat,lon,start,stopIncl,stepHours),fetchBody('399',lat,lon,start,stopIncl,stepHours)]);
+ const n=Math.min(sun.length,earth.length);
+ let illum=0,dte=0,golden=0;const timeline=[];
+ for(let i=0;i<n;i++){
+  const sEl=sun[i].el,eEl=earth[i].el,isSun=sEl>MIN_SUN_EL,isE=eEl>MIN_EARTH_EL,isG=isSun&&isE;
+  if(isSun)illum++;if(isE)dte++;if(isG)golden++;
+  timeline.push({timestamp:sun[i].date,sun_azimuth_deg:+sun[i].az.toFixed(2),sun_elevation_deg:+sEl.toFixed(2),is_illuminated:isSun,
+   generated_power_watts:+(isSun?Math.max(0,P_MAX*Math.sin(sEl*D)):0).toFixed(2),
+   earth_azimuth_deg:+earth[i].az.toFixed(2),earth_elevation_deg:+eEl.toFixed(2),is_dte_connected:isE,golden_window_active:isG});
+ }
+ const illumPct=+(illum/n*100).toFixed(2),dtePct=+(dte/n*100).toFixed(2);
+ const slope=+siteSlopeDeg(lat,lon).toFixed(2),terrainSafe=slope<=MAX_SLOPE;
+ const R=1737.4,phi=lat*D,lam=lon*D;
+ return{
+  site_coordinates:{latitude:lat,longitude:lon,cartesian_xyz_km:{X:+(R*Math.cos(phi)*Math.cos(lam)).toFixed(3),Y:+(R*Math.cos(phi)*Math.sin(lam)).toFixed(3),Z:+(R*Math.sin(phi)).toFixed(3)}},
+  terrain_safety_analysis:{slope_angle_deg:slope,max_allowed_slope_deg:MAX_SLOPE,is_terrain_safe:terrainSafe},
+  summary:{total_analyzed_hours:n,total_illuminated_hours:illum,illumination_percentage:illumPct+'%',total_dte_hours:dte,dte_communication_percentage:dtePct+'%',
+   golden_window_hours:golden,is_viable_landing_site:illumPct>=70&&dtePct>=50&&terrainSafe},
+  timeline_data:timeline,
+ };
+}
+
+/* ---------- result rendering (shared by inline result + why page) ---------- */
+function keyPoints(b,j){
+ const s=j.summary,t=j.terrain_safety_analysis,il=parseFloat(s.illumination_percentage),dt=parseFloat(s.dte_communication_percentage);
+ return[
+  [il>=70,'☀️ Sunlight',`The Sun is above the horizon ${s.illumination_percentage} of the time. At least 70% keeps power and heaters running.`],
+  [dt>=50,'📡 Earth link',`Earth is in view ${s.dte_communication_percentage} of the time. At least 50% keeps direct-to-Earth communication open.`],
+  [t.is_terrain_safe,'⛰️ Terrain',`The ground slope is ${t.slope_angle_deg}°. The safe limit for touchdown is ${t.max_allowed_slope_deg}°.`],
+ ];
+}
+function kpHTML(pts){return pts.map(k=>`<div class="kp"><b class="mark" style="color:var(--${k[0]?'g':'r'})">${k[0]?'✓':'✗'}</b><div><h4>${k[1]}</h4><p style="margin:.2rem 0 0;font-size:.92rem">${k[2]}</p></div></div>`).join('');}
+function showResult(){
+ if(!last)return;const{b,j}=last,s=j.summary,t=j.terrain_safety_analysis,ok=s.is_viable_landing_site,box=$('#result');
+ box.hidden=false;
+ box.innerHTML=`<div class="verdict" style="color:var(--${ok?'g':'r'})">${ok?'✅ Safe to land here':'❌ Not safe to land here'}</div>
+  <div class="metrics"><div class="card"><b>${s.illumination_percentage}</b><span>Sunlight</span></div><div class="card"><b>${s.dte_communication_percentage}</b><span>Earth in view</span></div><div class="card"><b>${t.slope_angle_deg}°</b><span>Ground slope</span></div></div>
+  ${kpHTML(keyPoints(b,j))}
+  <a class="btn solid" href="#/why" style="margin-top:1.2rem">📈 Know in details</a>`;
+}
+function renderWhy(){
+ const box=$('#whybox');
+ if(!last){box.innerHTML='<h1>No result yet</h1><p>Check a landing site first.</p><a class="btn solid" href="#/explore">Go to Predict &amp; Explore</a>';return}
+ const{b,j}=last,s=j.summary,t=j.terrain_safety_analysis,L=j.timeline_data,c=j.site_coordinates.cartesian_xyz_km,ok=s.is_viable_landing_site;
+ let run=0,best=0,n=0;for(const p of L){if(p.golden_window_active){if(!run)n++;best=Math.max(best,++run)}else run=0}
+ const il=parseFloat(s.illumination_percentage),dt=parseFloat(s.dte_communication_percentage);
+ const rows=[['Sunlight (Sun above 2°)',s.illumination_percentage,'70% or more',il>=70],['Earth in view (above 0.5°)',s.dte_communication_percentage,'50% or more',dt>=50],['Ground slope',t.slope_angle_deg+'°',t.max_allowed_slope_deg+'° or less',t.is_terrain_safe]];
+ const m=x=>`<b style="color:var(--${x?'g':'r'})">${x?'Pass':'Fail'}</b>`;
+ box.innerHTML=`<a href="#/explore">← Back to Predict &amp; Explore</a>
+ <h1 class="reveal" style="margin-top:1rem">${ok?'✅ Why landing is possible here':'❌ Why landing is not possible here'}</h1>
+ <p class="reveal">Latitude ${b.latitude}°, longitude ${b.longitude}°, from ${b.start_date} to ${b.stop_date}.</p>
+ <h2 class="reveal" style="margin-top:2.2rem">Key points</h2>
+ <div class="card reveal" style="padding:.2rem 1.4rem">${kpHTML(keyPoints(b,j))}</div>
+ <div class="stat-strip reveal">
+  <div class="stat card"><b>${s.golden_window_hours}h</b><span>of ${s.total_analyzed_hours}h with power + comms together</span></div>
+  <div class="stat card"><b>${n}</b><span>separate golden windows</span></div>
+  <div class="stat card"><b>${best}h</b><span>longest continuous window</span></div>
+ </div>
+ <h2 class="reveal" style="margin-top:2.2rem">Detailed data</h2>
+ <div class="card reveal" style="padding:1.3rem 1.5rem">
+  <div class="bars">${rows.map(r=>{const pct=Math.min(100,parseFloat(r[1]));return`<div class="barrow"><span>${r[0]}</span><div class="bartrack"><div class="barfill" style="width:${pct}%;background:var(--${r[3]?'g':'r'})"></div></div><span>${r[1]}</span></div>`}).join('')}</div>
+  <table><tr><th>Check</th><th>This site</th><th>Required</th><th>Result</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${m(r[3])}</td></tr>`).join('')}</table>
+ </div>
+ <p class="reveal">Site position from the Moon's centre: X ${c.X} km, Y ${c.Y} km, Z ${c.Z} km.</p>
+ <h3 class="reveal" style="margin-top:1.6rem">Sun and Earth height above the horizon</h3>
+ <canvas id="tl" class="reveal"></canvas>
+ <div class="legend"><span><i class="dot" style="background:var(--y)"></i>Sun</span><span><i class="dot" style="background:var(--b)"></i>Earth</span><span><i class="dot" style="background:var(--g);opacity:.5"></i>Both in view</span></div>
+ <p class="src">Sun/Earth positions: live NASA JPL Horizons. Terrain slope: illustrative procedural model, not the real LOLA elevation map.</p>`;
+ drawTL(L);
+}
+function drawTL(L){
+ if(!L.length)return;const c=$('#tl');if(!c)return;
+ const r=devicePixelRatio||1,w=c.clientWidth||600,h=c.clientHeight||320;c.width=w*r;c.height=h*r;
+ const g=c.getContext('2d');g.scale(r,r);
+ const P={l:56,r:10,t:10,b:30},W=w-P.l-P.r,Hh=h-P.t-P.b,n=Math.max(L.length-1,1),
+  all=L.flatMap(p=>[p.sun_elevation_deg,p.earth_elevation_deg]),lo=Math.min(-5,...all),hi=Math.max(5,...all),
+  fx=i=>P.l+i/n*W,fy=v=>P.t+(hi-v)/(hi-lo)*Hh;
+ g.fillStyle='rgba(61,220,132,.18)';L.forEach((p,i)=>{if(p.golden_window_active)g.fillRect(fx(i)-W/n/2,P.t,W/n+1,Hh)});
+ g.strokeStyle='#5b6579';g.lineWidth=1;g.beginPath();g.moveTo(P.l,fy(0));g.lineTo(w-P.r,fy(0));g.stroke();
+ g.fillStyle='#b7c0ce';g.font='14px Inter,sans-serif';g.textAlign='right';
+ [lo,0,hi].forEach(v=>g.fillText(Math.round(v)+'°',P.l-8,fy(v)+5));
+ g.textAlign='left';g.fillText(L[0].timestamp.slice(0,11),P.l,h-8);
+ g.textAlign='right';g.fillText(L[L.length-1].timestamp.slice(0,11),w-P.r,h-8);
+ [['sun_elevation_deg','#ffd23f'],['earth_elevation_deg','#7fd9ff']].forEach(([k,col])=>{
+  g.strokeStyle=col;g.lineWidth=2;g.beginPath();L.forEach((p,i)=>i?g.lineTo(fx(i),fy(p[k])):g.moveTo(fx(i),fy(p[k])));g.stroke()});
+}
+
+/* ---------- form ---------- */
+async function onSubmit(ev){
+ ev.preventDefault();
+ const b={latitude:+$('#lat').value,longitude:+$('#lon').value,start_date:$('#t0').value,stop_date:$('#t1').value},st=$('#status'),go=$('#go'),
+  days=(new Date(b.stop_date)-new Date(b.start_date))/864e5,
+  err=(!$('#lat').value||b.latitude<-90||b.latitude>90)?'Latitude must be between -90 and 90.':
+   (!$('#lon').value||b.longitude<-180||b.longitude>180)?'Longitude must be between -180 and 180.':
+   !(days>0)?'The stop date must be after the start date.':days>90?'Choose a mission of 90 days or less.':'';
+ if(err){st.textContent=err;return}
+ go.disabled=true;st.textContent='Fetching live Sun & Earth positions from NASA JPL Horizons…';
+ try{
+  const j=await assessSite(b.latitude,b.longitude,b.start_date,b.stop_date);
+  last={b,j};try{sessionStorage.setItem('last',JSON.stringify(last))}catch(_){}
+  st.textContent='';showResult();revealIn($('#result'));
+ }catch(x){st.textContent='Could not reach NASA Horizons: '+x.message+'. Check your connection and try again.'}
+ go.disabled=false;
+}
+$('#f').addEventListener('submit',onSubmit);
+
+/* ---------- scroll reveal + page transitions ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+function revealIn(root){
+ const scope=root||document.querySelector('.page:not([hidden])')||document,list=[];
+ if(root&&root.classList&&root.classList.contains('reveal'))list.push(root);
+ scope.querySelectorAll('.reveal').forEach(el=>list.push(el));
+ list.forEach((el,i)=>{el.style.transitionDelay=Math.min(i*45,360)+'ms';io.observe(el)});
+}
+
+/* ---------- routing ---------- */
+function route(){
+ const k=location.hash.replace(/^#\/?/,''),p=['dashboard','explore','why','users','how','insights'].includes(k)?k:'landing';
+ document.querySelectorAll('.page').forEach(s=>s.hidden=s.id!==p);
+ $('header').hidden=p==='landing';$('#stars').style.display=p==='landing'?'none':'block';
+ const navKey=p==='why'?'explore':p;
+ document.querySelectorAll('.nav').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+navKey));
+ if(p==='dashboard'){
+  if(!dashScene)dashScene=makeScene($('#stageDash'),{onPick:(lat,lon,cls)=>{
+    $('#coordDash').innerHTML='📍 '+lat.toFixed(2)+'°'+(lat<0?'S':'N')+', '+(((lon%360)+360)%360).toFixed(2)+'°E — '+['looks safe','use caution','looks dangerous'][cls]+' &nbsp;<a class="btn ghost" style="padding:.35rem .8rem;font-size:.82rem" href="#/explore" id="jumpExp">Check in Predict & Explore →</a>';
+    $('#jumpExp').addEventListener('click',()=>{$('#lat').value=lat.toFixed(3);$('#lon').value=lon.toFixed(3)});
+  }});
+  if(dashScene.stats)renderCharts(dashScene.stats);
+  setLegend($('#dashboard .legend'));
+ }
+ if(p==='explore'){
+  if(!expScene)expScene=makeScene($('#stageExp'),{onPick:(lat,lon)=>{$('#lat').value=lat.toFixed(3);$('#lon').value=lon.toFixed(3);updateCoord('coordExp',lat,lon)}});
+  renderQuickPicks();
+  showResult();
+ }
+ if(p==='why')renderWhy();
+ if(p==='insights'){
+  $('#clpsPills').innerHTML=['9 companies onboarded 2018','5 more added 2019','14 total eligible vendors','Fixed-price task orders']
+   .map(t=>'<span class="pill">'+t+'</span>').join('');
+ }
+ if(dashScene)dashScene.active=(p==='dashboard');
+ if(expScene)expScene.active=(p==='explore');
+ scrollTo(0,0);
+ requestAnimationFrame(()=>revealIn());
+}
+addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
